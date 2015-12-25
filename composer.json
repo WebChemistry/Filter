@@ -1,0 +1,20 @@
+{
+  "name": "webchemistry/filter",
+  "type": "library",
+  "description": "Data manager",
+  "license": ["GPL-3.0"],
+  "support": {
+    "email": "antik494@gmail.com",
+    "issues": "https://github.com/WebChemistry/Filter/issues"
+  },
+  "keywords": ["data", "manager"],
+  "authors": [
+    {
+      "name": "Antik",
+      "email": "antik494@gmail.com"
+    }
+  ],
+  "autoload": {
+    "classmap": ["src/"]
+  }
+}
