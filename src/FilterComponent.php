@@ -172,12 +172,19 @@ abstract class FilterComponent extends PresenterComponent {
 	}
 
 	/**
+	 * @return bool
+	 */
+	public function useCache() {
+		return !$this->isFiltering() || $this->settings->isCacheFiltering();
+	}
+
+	/**
 	 * @return string
 	 */
 	public function getCacheId() {
 		if ($this->isFiltering()) {
 			if (!$this->settings->isCacheFiltering()) {
-				return [NULL, ['if' => FALSE]];
+				return FALSE;
 			}
 
 			sort($this->filtering);
@@ -190,14 +197,19 @@ abstract class FilterComponent extends PresenterComponent {
 	}
 
 	/**
+	 * Use only for macro from WebChemistry\Filter\Cache
+	 *
 	 * @return array
 	 */
 	public function getCache() {
 		if ($this->isFiltering() && !$this->settings->isCacheFiltering()) {
-			return [NULL, ['if' => FALSE]];
+			return [NULL, 'if' => FALSE];
 		}
 
-		return [$this->getCacheId(), $this->settings->getCacheArgs()];
+		$args = $this->settings->getCacheArgs();
+		$args[0] = $this->getCacheId();
+
+		return $args;
 	}
 
 }
