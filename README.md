@@ -1,9 +1,7 @@
-# Správce souboru
+# Filtr a správce dat
 
 **Instalace**
-```
-    composer require webchemistry/filter
-```
+`composer require webchemistry/filter`
 
 ## Dokumentace
 
