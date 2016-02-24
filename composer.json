@@ -14,6 +14,16 @@
       "email": "antik494@gmail.com"
     }
   ],
+  "require": {
+    "nette/application": "^2.3",
+    "nette/forms": "^2.3"
+  },
+  "require-dev": {
+    "kdyby/doctrine": ">= 2.3.0",
+    "codeception/codeception": "^2.1",
+    "nette/database": "^2.3",
+    "latte/latte": "^2.3"
+  },
   "autoload": {
     "classmap": ["src/"]
   }
