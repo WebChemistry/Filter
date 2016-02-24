@@ -45,7 +45,7 @@ class Settings extends Object {
 	private $filteringDefaults = [];
 
 	/** @var string */
-	public static $defaultPaginatorFile = __DIR__ . '/Paginator/templates/paginator.latte';
+	public static $defaultPaginatorFile;
 
 	/** @var string */
 	private $paginatorFile;
@@ -63,6 +63,7 @@ class Settings extends Object {
 	private $ajaxForm = FALSE;
 
 	public function __construct() {
+		self::$defaultPaginatorFile = self::$defaultPaginatorFile ? : __DIR__ . '/Paginator/templates/paginator.latte';
 		$this->forms = new ComponentForm($this);
 	}
 
@@ -244,7 +245,7 @@ class Settings extends Object {
 	 * @throws \WebChemistry\Filter\Exception
 	 */
 	public function setPaginatorFile($paginatorFile) {
-		if (!file_exists($paginatorFile)) {
+		if (!file_exists($paginatorFile) || is_dir($paginatorFile)) {
 			throw new Exception("File '$paginatorFile' is not exists.");
 		}
 
@@ -292,7 +293,7 @@ class Settings extends Object {
 			throw new Exception(printf('Form must be instance of Nette\Forms\Form, given %s', Exception::getType($form)));
 		}
 
-		$this->forms[$name] = $form;
+		$this->forms->addComponent($form, $name);
 
 		return $this;
 	}
@@ -330,4 +331,5 @@ class Settings extends Object {
 
 		return $this;
 	}
+
 }

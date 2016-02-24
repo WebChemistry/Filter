@@ -25,6 +25,10 @@ class Nette extends Component implements IDataSource {
 	/** @var \WebChemistry\Filter\Settings */
 	private $settings;
 
+	/**
+	 * @param Selection $source
+	 * @param Settings $settings
+	 */
 	public function __construct($source, Settings $settings) {
 		$this->source = $source;
 		$this->settings = $settings;
@@ -32,6 +36,10 @@ class Nette extends Component implements IDataSource {
 
 	/************************* Setters **********************/
 
+	/**
+	 * @param string $select
+	 * @return self
+	 */
 	public function setSelect($select) {
 		$this->source->select($select);
 
@@ -47,6 +55,9 @@ class Nette extends Component implements IDataSource {
 		return $this->source;
 	}
 
+	/**
+	 * @return int
+	 */
 	public function getCount() {
 		if ($this->count === NULL) {
 			$column = !$this->source->getPrimary(FALSE) ? '*' : $this->source->getPrimary();
@@ -57,6 +68,9 @@ class Nette extends Component implements IDataSource {
 		return $this->count;
 	}
 
+	/**
+	 * @return mixed
+	 */
 	public function getData() {
 		if ($this->settings->getLimit() !== NULL) {
 			$this->source->limit($this->settings->getLimit(), $this->settings->getOffset());

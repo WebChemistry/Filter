@@ -25,7 +25,7 @@ class Paginator extends Nette\Application\UI\Control implements IComponent{
     public $page = 1;
 
     /** @var array */
-    private $steps = array();
+    private $steps = [];
 
     /** @var Settings */
     private $settings;
@@ -33,6 +33,9 @@ class Paginator extends Nette\Application\UI\Control implements IComponent{
 	/** @var array */
 	public $onRender = [];
 
+	/**
+	 * @param Settings $settings
+	 */
     public function __construct(Settings $settings) {
         $this->paginator = new Nette\Utils\Paginator;
         $this->settings = $settings;
@@ -55,44 +58,43 @@ class Paginator extends Nette\Application\UI\Control implements IComponent{
         $this->template->render();
     }
 
+	/**
+	 * @return string
+	 */
 	public function prevLink() {
-		$isAjax = (bool) $this->settings->getSnippet();
-
 		if ($this->page !== 1) {
-			if ($isAjax) {
-				return $this->link('paginate!', ['page' => $this->page - 1]);
-			} else {
-				return $this->link('this', ['page' => $this->page - 1]);
-			}
+			return $this->stepLink($this->page - 1);
 		}
 	}
 
+	/**
+	 * @return string
+	 */
 	public function nextLink() {
-		$isAjax = (bool) $this->settings->getSnippet();
-
-		if ($this->page !== $this->paginator->pageCount) {
-			if ($isAjax) {
-				return $this->link('paginate!', ['page' => $this->page + 1]);
-			} else {
-				return $this->link('this', ['page' => $this->page + 1]);
-			}
+		if ($this->page !== $this->paginator->getPageCount()) {
+			return$this->stepLink($this->page + 1);
 		}
 	}
 
+	/**
+	 * @param int $step
+	 * @return string
+	 */
 	public function stepLink($step) {
-		$isAjax = (bool) $this->settings->getSnippet();
-
-		if ($isAjax) {
+		if ($this->settings->getSnippet()) {
 			return $this->link('paginate!', ['page' => $step]);
-		} else {
-			return $this->link('this', ['page' => $step]);
 		}
+
+		return $this->link('this', ['page' => $step]);
 	}
 
+	/**
+	 * @param int $step
+	 */
 	public function handlePaginate($step) {
-		if ($this->presenter->isAjax()) {
+		if ($this->getPresenter()->isAjax()) {
 			foreach ($this->settings->getSnippet() as $snippet) {
-				$this->presenter->redrawControl($snippet);
+				$this->getPresenter()->redrawControl($snippet);
 			}
 		} else {
 			$this->redirect('this');
@@ -110,8 +112,14 @@ class Paginator extends Nette\Application\UI\Control implements IComponent{
 
     /************************* Setters **************************/
 
+	/**
+	 * @param $file
+	 * @return self
+	 */
     public function setFile($file) {
         $this->file = $file;
+
+		return $this;
     }
 
     /************************* Getters **************************/
@@ -148,6 +156,9 @@ class Paginator extends Nette\Application\UI\Control implements IComponent{
         return $this->steps;
     }
 
+	/**
+	 * @return int
+	 */
     public function getOffset() {
         $this->getSteps();
 
@@ -160,4 +171,5 @@ class Paginator extends Nette\Application\UI\Control implements IComponent{
     public function getPaginator() {
         return $this->paginator;
     }
+
 }

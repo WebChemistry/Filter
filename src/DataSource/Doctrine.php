@@ -27,6 +27,10 @@ class Doctrine extends Nette\ComponentModel\Component implements IDataSource {
 	/** @var integer */
 	private $count = NULL;
 
+	/**
+	 * @param mixed $source
+	 * @param Settings $settings
+	 */
 	public function __construct($source, Settings $settings) {
 		$this->builder = $source;
 		$this->settings = $settings;

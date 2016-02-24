@@ -3,22 +3,33 @@
 namespace WebChemistry\Filter;
 
 use Nette\ComponentModel\Container;
-use Nette;
 use Nette\ComponentModel\IComponent;
+use Nette\Forms\Form;
+use Nette\InvalidArgumentException;
 
 class ComponentForm extends Container implements \ArrayAccess {
 
-	/** @var \WebChemistry\Filter\Settings */
+	/** @var Settings */
 	private $settings;
 
+	/**
+	 * @param Settings $settings
+	 */
 	public function __construct(Settings $settings) {
 		$this->monitor('WebChemistry\Filter\FilterComponent');
 		$this->settings = $settings;
 	}
 
+	/**
+	 * @param IComponent $component
+	 * @param string $name
+	 * @param IComponent $insertBefore
+	 * @return Container
+	 * @throws InvalidArgumentException
+	 */
 	public function addComponent(IComponent $component, $name, $insertBefore = NULL) {
-		if (!$component instanceof Nette\Forms\Form) {
-			throw new Exception(printf('Form must be instance of Nette\Forms\Form, %s given.', get_class($component)));
+		if (!$component instanceof Form) {
+			throw new InvalidArgumentException(printf('Form must be instance of Nette\Forms\Form, %s given.', get_class($component)));
 		}
 
 		return parent::addComponent($component, $name, $insertBefore);
@@ -28,7 +39,7 @@ class ComponentForm extends Container implements \ArrayAccess {
 		parent::attached($obj);
 
 		if ($obj instanceof FilterComponent) {
-			/** @var Nette\Forms\Form $cmp */
+			/** @var Form $cmp */
 			foreach ($this->getComponents() as $cmp) {
 				if ($this->settings->isAjaxForm() && $this->settings->getSnippet()) {
 					if (is_string($cmp->getElementPrototype()->class)) {
@@ -56,9 +67,9 @@ class ComponentForm extends Container implements \ArrayAccess {
 
 	/**
 	 * Returns component specified by name. Throws exception if component doesn't exist.
-	 * @param  string  component name
-	 * @return Nette\ComponentModel\IComponent
-	 * @throws Nette\InvalidArgumentException
+	 * @param  string $name component name
+	 * @return IComponent
+	 * @throws InvalidArgumentException
 	 */
 	public function offsetGet($name) {
 		return $this->getComponent($name, TRUE);
@@ -67,7 +78,7 @@ class ComponentForm extends Container implements \ArrayAccess {
 
 	/**
 	 * Does component specified by name exists?
-	 * @param  string  component name
+	 * @param  string $name component name
 	 * @return bool
 	 */
 	public function offsetExists($name) {
@@ -77,7 +88,7 @@ class ComponentForm extends Container implements \ArrayAccess {
 
 	/**
 	 * Removes component from the container.
-	 * @param  string  component name
+	 * @param  string $name component name
 	 * @return void
 	 */
 	public function offsetUnset($name) {
@@ -86,4 +97,5 @@ class ComponentForm extends Container implements \ArrayAccess {
 			$this->removeComponent($component);
 		}
 	}
+
 }

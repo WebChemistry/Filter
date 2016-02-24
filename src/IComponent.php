@@ -2,4 +2,6 @@
 
 namespace WebChemistry\Filter;
 
-interface IComponent {}
+interface IComponent {
+
+}

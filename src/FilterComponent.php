@@ -31,9 +31,7 @@ abstract class FilterComponent extends PresenterComponent {
 		}
 
 		$this->settings = new Settings();
-
 		$this->startup($this->settings);
-
 		if (!$this->settings instanceof Settings) {
 			throw new Exception('Settings must be instance of WebChemistry\Filter\Settings.');
 		}
@@ -42,7 +40,7 @@ abstract class FilterComponent extends PresenterComponent {
 	}
 
 	/**
-	 * @return Settings|null
+	 * @return Settings|void
 	 */
 	abstract protected function startup(Settings $settings);
 
@@ -55,17 +53,17 @@ abstract class FilterComponent extends PresenterComponent {
 	}
 
 	/**
-	 * @param \Nette\Forms\Form $form
-	 * @param array             $values
+	 * @param Form $form
+	 * @param array$values
 	 * @internal
 	 */
 	public function successForm(Form $form, array $values) {
 		$this->filtering = $values + $this->filtering;
 		$this->getPaginator()->resetPage();
 
-		if ($this->presenter->isAjax() && $this->settings->isAjaxForm() && $snippets = $this->settings->getSnippet()) {
+		if ($this->getPresenter()->isAjax() && $this->settings->isAjaxForm() && $snippets = $this->settings->getSnippet()) {
 			foreach ($snippets as $snippet) {
-				$this->presenter->redrawControl($snippet);
+				$this->getPresenter()->redrawControl($snippet);
 			}
 		} else {
 			$this->redirect('this');
@@ -114,7 +112,7 @@ abstract class FilterComponent extends PresenterComponent {
 		$this->initCompleted = TRUE;
 
 		$this->settings->callDataSource($this->filtering);
-		$this['paginator']->init();
+		$this->getPaginator()->init();
 	}
 
 	/**
@@ -127,6 +125,9 @@ abstract class FilterComponent extends PresenterComponent {
 		return $this->settings->getData();
 	}
 
+	/**
+	 * @return bool
+	 */
 	public function isFiltering() {
 		return (bool) $this->filtering;
 	}
@@ -154,6 +155,9 @@ abstract class FilterComponent extends PresenterComponent {
 		return $this['paginator']->page;
 	}
 
+	/**
+	 * @return string
+	 */
 	public function getResetLink() {
 		return $this->link('reset!');
 	}
@@ -162,9 +166,9 @@ abstract class FilterComponent extends PresenterComponent {
 		$this->filtering = [];
 		$this->getPaginator()->resetPage();
 
-		if ($snippets = $this->settings->getSnippet() && $this->presenter->isAjax()) {
+		if (($snippets = $this->settings->getSnippet()) && $this->getPresenter()->isAjax()) {
 			foreach ($snippets as $snippet) {
-				$this->presenter->redrawControl($snippet);
+				$this->getPresenter()->redrawControl($snippet);
 			}
 		} else {
 			$this->redirect('this');
@@ -186,7 +190,6 @@ abstract class FilterComponent extends PresenterComponent {
 			if (!$this->settings->isCacheFiltering()) {
 				return FALSE;
 			}
-
 			sort($this->filtering);
 			$filterHash = '.filter.' . md5(serialize($this->filtering));
 		} else {
@@ -205,7 +208,6 @@ abstract class FilterComponent extends PresenterComponent {
 		if ($this->isFiltering() && !$this->settings->isCacheFiltering()) {
 			return [NULL, 'if' => FALSE];
 		}
-
 		$args = $this->settings->getCacheArgs();
 		$args[0] = $this->getCacheId();
 
