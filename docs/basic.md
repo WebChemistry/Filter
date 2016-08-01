@@ -1,7 +1,7 @@
 ## Basic usage
 
 Component class:
-´´´php
+```php
 namespace App;
 
 use Nette\Database\Context;
@@ -30,16 +30,16 @@ class DemoFilter extends BaseFilterComponent {
 		return $table;
 	}
 }
-´´´
+```
 
 Register to neon as service:
-´´´yaml
+```yaml
 services:
     - App\DemoFilter
-´´´
+```
 
 use in presenter:
-´´´php
+```php
 class HomepagePresenter extends BasePresenter {
 
     /** @var App\DemoFilter @inject */
@@ -50,11 +50,11 @@ class HomepagePresenter extends BasePresenter {
     }
 
 }
-´´´
+```
 
 and render it in template:
 
-´´´html
+```html
 {filter demoFilter}
     {foreach $filter->getData() as $item}
         {$item->name}
@@ -62,4 +62,4 @@ and render it in template:
     
     {control $filter->pagintator}
 {/filter}
-´´´
+```

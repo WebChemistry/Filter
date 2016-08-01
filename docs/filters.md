@@ -2,7 +2,7 @@
 
 ## Component class
 
-´´´php
+```php
 namespace App;
 
 use Nette\Database\Context;
@@ -57,11 +57,11 @@ class DemoFilter extends BaseFilterComponent {
 		return $table;
 	}
 }
-´´´
+```
 
-We can also use method ´setDefaultFilterData´. These values are used when form is not submitted.
+We can also use method `setDefaultFilterData`. These values are used when form is not submitted.
 
-´´´php
+```php
 namespace App;
 
 use Nette\Database\Context;
@@ -114,10 +114,10 @@ class DemoFilter extends BaseFilterComponent {
 		return $table;
 	}
 }
-´´´
+```
 ## Template
 
-´´´html
+```html
 {filter demoFilter}
     {control $filter['filterForm']} {* important *}
 
@@ -127,4 +127,4 @@ class DemoFilter extends BaseFilterComponent {
     
     {control $filter->pagintator}
 {/filter}
-´´´
+```

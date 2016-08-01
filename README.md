@@ -4,10 +4,10 @@
 `composer require webchemistry/filter`
 
 **register DI**
-´´´yaml
+```yaml
 extensions:
     filter: WebChemistry\Filter\DI\FilterExtension
-´´´
+```
 
 ## Demo
 

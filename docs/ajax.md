@@ -2,7 +2,7 @@
 
 ## Component class
 
-´´´php
+```php
 namespace App;
 
 use Nette\Database\Context;
@@ -89,10 +89,10 @@ class DemoFilter extends BaseFilterComponent {
 		return $table;
 	}
 }
-´´´
+```
 ## Template
 
-´´´html
+```html
 {block aside}
     {filter demoFilter}
         {foreach $categories as $id => $name}
@@ -115,4 +115,4 @@ class DemoFilter extends BaseFilterComponent {
         {/filter}
     {/snippet}
 {/block}
-´´´
+```

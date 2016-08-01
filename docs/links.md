@@ -4,7 +4,7 @@ When we have e.g. list of categories at side panel, we can filter by them.
 
 ## Component class
 
-´´´php
+```php
 namespace App;
 
 use Nette\Database\Context;
@@ -81,10 +81,10 @@ class DemoFilter extends BaseFilterComponent {
 		return $table;
 	}
 }
-´´´
+```
 ## Template
 
-´´´html
+```html
 {block aside}
     {* important *}
     {filter demoFilter}
@@ -106,4 +106,4 @@ class DemoFilter extends BaseFilterComponent {
         {control $filter->pagintator}
     {/filter}
 {/block}
-´´´
+```
