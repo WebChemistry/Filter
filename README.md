@@ -11,6 +11,8 @@ extensions:
 
 ## Demo
 
+[link](http://filter.thunbolt.cz/)
+
 ## Documentation
 
 [Basic usage](https://github.com/WebChemistry/filter/blob/master/docs/basic.md)
