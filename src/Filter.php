@@ -2,19 +2,29 @@
 
 namespace WebChemistry\Filter;
 
-class Filter extends FilterComponent {
+abstract class BaseFilterComponent extends FilterComponent {
 
 	/**
-	 * @param Settings $settings
+	 * @return int
 	 */
-	public function __construct(Settings $settings) {
-		$this->settings = $settings;
+	public function getItemCount() {
+		$this->init();
+
+		return $this->settings->getItemCount() < $this->settings->getLimit() ? $this->settings->getLimit() : $this->settings->getItemCount();
 	}
 
 	/**
-	 * @param Settings $settings
-	 * @return void
+	 * @return int
 	 */
-	protected function startup(Settings $settings) {}
+	public function getLimit() {
+		return $this->settings->getLimit();
+	}
+
+	/**
+	 * @return int
+	 */
+	public function getPage() {
+		return $this->getPaginator()->page;
+	}
 
 }

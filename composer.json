@@ -1,30 +1,37 @@
 {
-  "name": "webchemistry/filter",
-  "type": "library",
-  "description": "Data manager",
-  "license": ["GPL-3.0"],
-  "support": {
-    "email": "antik494@gmail.com",
-    "issues": "https://github.com/WebChemistry/Filter/issues"
-  },
-  "keywords": ["data", "manager"],
-  "authors": [
-    {
-      "name": "Antik",
-      "email": "antik494@gmail.com"
-    }
-  ],
-  "require": {
-    "nette/application": "^2.3",
-    "nette/forms": "^2.3"
-  },
-  "require-dev": {
-    "kdyby/doctrine": ">= 2.3.0",
-    "codeception/codeception": "^2.1",
-    "nette/database": "^2.3",
-    "latte/latte": "^2.3"
-  },
-  "autoload": {
-    "classmap": ["src/"]
-  }
+	"name": "webchemistry/filter",
+	"type": "library",
+	"description": "Data layer",
+	"license": [
+		"GPL-3.0"
+	],
+	"support": {
+		"email": "antik494@gmail.com",
+		"issues": "https://github.com/WebChemistry/Filter/issues"
+	},
+	"keywords": [
+		"data",
+		"layer"
+	],
+	"authors": [
+		{
+			"name": "MartkCz",
+			"email": "antik494@gmail.com"
+		}
+	],
+	"require": {
+		"nette/application": "^2.3",
+		"nette/forms": "^2.3"
+	},
+	"require-dev": {
+		"kdyby/doctrine": ">= 2.3.0",
+		"codeception/codeception": "^2.1",
+		"nette/database": "^2.3",
+		"latte/latte": "^2.3"
+	},
+	"autoload": {
+		"classmap": [
+			"src/"
+		]
+	}
 }

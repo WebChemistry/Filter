@@ -2,11 +2,9 @@
 
 namespace WebChemistry\Filter\DataSource;
 
-use WebChemistry\DataFilter\AutoFilter;
 use Doctrine as Doc, Nette;
 
 use Doctrine\ORM\QueryBuilder;
-use WebChemistry\Filter\Settings;
 
 /**
  * @property-read QueryBuilder $queryBuilder
@@ -16,24 +14,19 @@ use WebChemistry\Filter\Settings;
  * @property int $limit
  * @property-write string $select
  */
-class Doctrine extends Nette\ComponentModel\Component implements IDataSource {
+class DoctrineDataSource extends Nette\ComponentModel\Component implements IDataSource {
 
 	/** @var QueryBuilder */
 	private $builder;
-
-	/** @var Settings */
-	private $settings;
 
 	/** @var integer */
 	private $count = NULL;
 
 	/**
 	 * @param mixed $source
-	 * @param Settings $settings
 	 */
-	public function __construct($source, Settings $settings) {
+	public function __construct($source) {
 		$this->builder = $source;
-		$this->settings = $settings;
 	}
 
 	/************************* Setters **********************/
@@ -53,10 +46,15 @@ class Doctrine extends Nette\ComponentModel\Component implements IDataSource {
 		return $this->builder;
 	}
 
-	public function getData() {
-		if ($this->settings->getLimit() !== NULL) {
-			$this->builder->setMaxResults($this->settings->getLimit());
-			$this->builder->setFirstResult($this->settings->getOffset());
+	/**
+	 * @param int $limit
+	 * @param int $offset
+	 * @return array
+	 */
+	public function getData($limit = NULL, $offset = NULL) {
+		if ($limit !== NULL) {
+			$this->builder->setMaxResults($limit);
+			$this->builder->setFirstResult($offset);
 		}
 
 		return $this->builder->getQuery()->getResult();
@@ -64,8 +62,10 @@ class Doctrine extends Nette\ComponentModel\Component implements IDataSource {
 
 	public function getCount() {
 		if ($this->count === NULL) {
-			$paginator = new Doc\ORM\Tools\Pagination\Paginator($this->builder);
-			$this->count = $paginator->count();
+			$alias = $this->builder->getRootAliases();
+			$builder = clone $this->builder;
+			$result = $builder->select('COUNT(' . current($alias) . '.id) AS count')->getQuery()->getSingleResult();
+			$this->count = $result['count'];
 		}
 
 		return $this->count;

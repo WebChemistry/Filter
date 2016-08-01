@@ -3,10 +3,15 @@
 namespace WebChemistry\Filter;
 
 use Nette\Application\IPresenter;
+use Nette\Application\UI\Component;
 use Nette\Application\UI\PresenterComponent;
 use Nette\Forms\Form;
 
-abstract class FilterComponent extends PresenterComponent {
+if (!class_exists(Component::class)) {
+	class_alias(PresenterComponent::class, Component::class);
+}
+
+abstract class FilterComponent extends Component {
 
 	/** @var Settings */
 	protected $settings;
@@ -14,42 +19,47 @@ abstract class FilterComponent extends PresenterComponent {
 	/** @persistent */
 	public $filtering = [];
 
-	/** @var bool */
-	protected $initCompleted = FALSE;
+	/** @persistent */
+	public $links = [];
+
+	/** @persistent */
+	public $limit;
 
 	/** @var bool */
-	private $startupCompleted = FALSE;
+	private $initCompleted = FALSE;
 
 	public function __construct() {
-		$this->monitor('Nette\Application\IPresenter');
+		$this->monitor(IPresenter::class);
 		$this->callStartup();
 	}
 
 	private function callStartup() {
-		if ($this->startupCompleted || $this->settings !== NULL) {
-			return NULL;
+		if ($this->settings === NULL) {
+			$this->settings = new Settings($this);
+			$this->startup();
 		}
-
-		$this->settings = new Settings();
-		$this->startup($this->settings);
-		if (!$this->settings instanceof Settings) {
-			throw new Exception('Settings must be instance of WebChemistry\Filter\Settings.');
-		}
-
-		$this->startupCompleted = TRUE;
 	}
 
-	/**
-	 * @return Settings|void
-	 */
-	abstract protected function startup(Settings $settings);
+	abstract protected function startup();
 
 	protected function attached($presenter) {
 		parent::attached($presenter);
 
 		if ($presenter instanceof IPresenter) {
 			$this->callStartup();
+			if ($presenter->isAjax()) {
+				foreach ($this->settings->getSnippets() as $snippet) {
+					$presenter->redrawControl($snippet);
+				}
+			}
 		}
+	}
+
+	/**
+	 * @return DataFacade
+	 */
+	public function createFacade() {
+		return new DataFacade($this, $this->settings);
 	}
 
 	/**
@@ -58,10 +68,94 @@ abstract class FilterComponent extends PresenterComponent {
 	 * @internal
 	 */
 	public function successForm(Form $form, array $values) {
-		$this->filtering = $values + $this->filtering;
+		$this->filtering = array_merge($this->filtering, $values);
 		$this->getPaginator()->resetPage();
 
-		if ($this->getPresenter()->isAjax() && $this->settings->isAjaxForm() && $snippets = $this->settings->getSnippet()) {
+		if ($this->getPresenter()->isAjax()) {
+			foreach ($this->settings->getSnippets() as $snippet) {
+				$this->getPresenter()->redrawControl($snippet);
+			}
+		} else {
+			$this->redirect('this');
+		}
+	}
+
+	/**
+	 * @internal
+	 */
+	public function init() {
+		if (!$this->initCompleted) {
+			$this->initCompleted = TRUE;
+			$this->callStartup();
+			if ($this->settings->isDynamicLimit() && $this->settings->getPaginator()->isOk() && $this->limit > 0) {
+				$this->settings->getPaginator()->setLimit($this->limit);
+			}
+			$this->settings->getDataSource()->__callDataSource($this->getFilterValues());
+		}
+	}
+
+	/**
+	 * @return array
+	 */
+	public function getData() {
+		$this->init();
+
+		$additional = $this->settings->getAdditional();
+		if ($additional->isAdditional()) {
+			foreach ($this->settings->getDataSource()->getDataSource()->getData($this->getPaginator()->getLimit(), $this->getPaginator()->getOffset()) as $item) {
+				$additional->setActiveRow($item);
+				yield $item;
+			}
+		} else {
+			foreach ($this->settings->getDataSource()->getDataSource()->getData($this->getPaginator()->getLimit(), $this->getPaginator()->getOffset()) as $item) {
+				yield $item;
+			}
+		}
+		$additional->setActiveRow(NULL);
+	}
+
+	/**
+	 * @return bool
+	 */
+	public function isFiltered() {
+		return (bool) $this->filtering;
+	}
+
+	/**
+	 * @return array
+	 */
+	public function getFilterValues() {
+		return array_merge($this->settings->getDefaultFilterData(), (array) $this->filtering, $this->settings->getLinks()->parse($this->links));
+	}
+
+	/************************* Links **************************/
+
+	public function limitLink($difference) {
+		$limit = $this->limit ?: $this->getPaginator()->getLimit();
+
+		return $this->link('this', ['limit' => $limit + $difference]);
+	}
+
+	/**
+	 * @internal
+	 */
+	public function getDynamicLink($link, $value) {
+		if (!$this->settings->getLinks()->exists($link)) {
+			throw new FilterException("Link $link not exists.");
+		}
+
+		return $this->link('this', ['links' => array_merge($this->links, [$link => $value])]);
+	}
+
+	/************************* Reset **************************/
+
+	public function handleReset() {
+		$this->filtering = [];
+		$this->limit = NULL;
+		$this->links = [];
+		$this->getPaginator()->resetPage();
+
+		if (($snippets = $this->settings->getSnippets()) && $this->getPresenter()->isAjax()) {
 			foreach ($snippets as $snippet) {
 				$this->getPresenter()->redrawControl($snippet);
 			}
@@ -71,14 +165,17 @@ abstract class FilterComponent extends PresenterComponent {
 	}
 
 	/**
-	 * @return Settings
+	 * @return string
 	 */
-	public function getSettings() {
-		return $this->settings;
+	public function getResetLink() {
+		return $this->link('reset!');
 	}
 
+	/************************* Components **************************/
+
 	/**
-	 * @return \WebChemistry\Filter\ComponentForm
+	 * @return FormList
+	 * @internal
 	 */
 	protected function createComponentForms() {
 		return $this->settings->getForms();
@@ -93,125 +190,13 @@ abstract class FilterComponent extends PresenterComponent {
 
 	/**
 	 * @return Paginator
+	 * @internal
 	 */
 	protected function createComponentPaginator() {
-		$paginator = new Paginator($this->settings);
-
+		$paginator = $this->settings->getPaginator();
 		$paginator->onRender[] = [$this, 'init'];
 
 		return $paginator;
-	}
-
-	/**
-	 * @internal
-	 */
-	public function init() {
-		if ($this->initCompleted) {
-			return NULL;
-		}
-		$this->initCompleted = TRUE;
-
-		$this->settings->callDataSource($this->filtering);
-		$this->getPaginator()->init();
-	}
-
-	/**
-	 * @return mixed
-	 * @throws \WebChemistry\Filter\Exception
-	 */
-	public function getData() {
-		$this->init();
-
-		return $this->settings->getData();
-	}
-
-	/**
-	 * @return bool
-	 */
-	public function isFiltering() {
-		return (bool) $this->filtering;
-	}
-
-	/**
-	 * @return int
-	 */
-	public function getItemCount() {
-		$this->init();
-
-		return $this->settings->getItemCount() < $this->settings->getLimit() ? $this->settings->getLimit() : $this->settings->getItemCount();
-	}
-
-	/**
-	 * @return int
-	 */
-	public function getLimit() {
-		return $this->settings->getLimit();
-	}
-
-	/**
-	 * @return int
-	 */
-	public function getPage() {
-		return $this['paginator']->page;
-	}
-
-	/**
-	 * @return string
-	 */
-	public function getResetLink() {
-		return $this->link('reset!');
-	}
-
-	public function handleReset() {
-		$this->filtering = [];
-		$this->getPaginator()->resetPage();
-
-		if (($snippets = $this->settings->getSnippet()) && $this->getPresenter()->isAjax()) {
-			foreach ($snippets as $snippet) {
-				$this->getPresenter()->redrawControl($snippet);
-			}
-		} else {
-			$this->redirect('this');
-		}
-	}
-
-	/**
-	 * @return bool
-	 */
-	public function useCache() {
-		return !$this->isFiltering() || $this->settings->isCacheFiltering();
-	}
-
-	/**
-	 * @return string
-	 */
-	public function getCacheId() {
-		if ($this->isFiltering()) {
-			if (!$this->settings->isCacheFiltering()) {
-				return FALSE;
-			}
-			sort($this->filtering);
-			$filterHash = '.filter.' . md5(serialize($this->filtering));
-		} else {
-			$filterHash = NULL;
-		}
-
-		return $this->getUniqueId() . '.page.' . $this->getPage() . $filterHash;
-	}
-
-	/**
-	 * Use only for macro from WebChemistry\Filter\Cache
-	 *
-	 * @return array
-	 */
-	public function getCache() {
-		if ($this->isFiltering() && !$this->settings->isCacheFiltering()) {
-			return [NULL, 'if' => FALSE];
-		}
-		$args = $this->settings->getCacheArgs();
-		$args[0] = $this->getCacheId();
-
-		return $args;
 	}
 
 }

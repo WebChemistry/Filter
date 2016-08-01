@@ -4,16 +4,7 @@ namespace WebChemistry\Filter;
 
 use Nette;
 
-/**
- * @property-read array $steps
- * @property-read int $offset
- * @property-write array $snippet
- * @property-write string $file
- * @property-write int $itemsPerPage
- * @property-write int $count
- * @method onRender
- */
-class Paginator extends Nette\Application\UI\Control implements IComponent{
+class Paginator extends Nette\Application\UI\Control {
     
     /** @var Nette\Utils\Paginator */
     private $paginator;
@@ -30,8 +21,11 @@ class Paginator extends Nette\Application\UI\Control implements IComponent{
     /** @var Settings */
     private $settings;
 
-	/** @var array */
+	/** @var callable[] */
 	public $onRender = [];
+
+	/** @var int */
+	private $limit;
 
 	/**
 	 * @param Settings $settings
@@ -42,24 +36,27 @@ class Paginator extends Nette\Application\UI\Control implements IComponent{
     }
     
     public function render() {
-        $this->template->setFile($this->settings->getPaginatorFile());
+        $this->template->setFile($this->file);
         $this->template->paginator = $this->paginator;
 
         $this->template->steps = $this->getSteps();
-        $this->template->ajax = (bool) $this->settings->getSnippet();
+        $this->template->ajax = $this->settings->isAjax();
         $this->template->pageCount = $this->paginator->pageCount;
 		$this->template->page = $this->paginator->page;
 		$this->template->use = $this->paginator->pageCount > 1;
 		$this->template->prevLink = $this->prevLink();
 		$this->template->nextLink = $this->nextLink();
 
-		$this->onRender();
+		foreach ($this->onRender as $callback) {
+			$callback();
+		}
 
         $this->template->render();
     }
 
 	/**
 	 * @return string
+	 * @internal
 	 */
 	public function prevLink() {
 		if ($this->page !== 1) {
@@ -69,19 +66,21 @@ class Paginator extends Nette\Application\UI\Control implements IComponent{
 
 	/**
 	 * @return string
+	 * @internal
 	 */
 	public function nextLink() {
 		if ($this->page !== $this->paginator->getPageCount()) {
-			return$this->stepLink($this->page + 1);
+			return $this->stepLink($this->page + 1);
 		}
 	}
 
 	/**
 	 * @param int $step
 	 * @return string
+	 * @internal
 	 */
 	public function stepLink($step) {
-		if ($this->settings->getSnippet()) {
+		if ($this->settings->getSnippets()) {
 			return $this->link('paginate!', ['page' => $step]);
 		}
 
@@ -90,10 +89,11 @@ class Paginator extends Nette\Application\UI\Control implements IComponent{
 
 	/**
 	 * @param int $step
+	 * @internal
 	 */
 	public function handlePaginate($step) {
 		if ($this->getPresenter()->isAjax()) {
-			foreach ($this->settings->getSnippet() as $snippet) {
+			foreach ($this->settings->getSnippets() as $snippet) {
 				$this->getPresenter()->redrawControl($snippet);
 			}
 		} else {
@@ -101,11 +101,9 @@ class Paginator extends Nette\Application\UI\Control implements IComponent{
 		}
 	}
 
-    public function init() {
-        $this->settings->setPage($this->page);
-        $this->settings->setOffset($this->getOffset());
-    }
-
+	/**
+	 * @internal
+	 */
     public function resetPage() {
 		$this->page = 1;
 	}
@@ -113,7 +111,7 @@ class Paginator extends Nette\Application\UI\Control implements IComponent{
     /************************* Setters **************************/
 
 	/**
-	 * @param $file
+	 * @param string $file
 	 * @return self
 	 */
     public function setFile($file) {
@@ -130,7 +128,7 @@ class Paginator extends Nette\Application\UI\Control implements IComponent{
     public function getSteps() {
         if (!$this->steps) {
             $this->paginator->setPage($this->page);
-            $this->paginator->setItemsPerPage($this->settings->getLimit());
+            $this->paginator->setItemsPerPage($this->limit);
             $this->paginator->setItemCount($this->settings->getItemCount());
             $this->paginator->setPage($this->page);
 
@@ -157,9 +155,36 @@ class Paginator extends Nette\Application\UI\Control implements IComponent{
     }
 
 	/**
+	 * @return bool
+	 */
+    public function isOk() {
+    	return $this->limit !== NULL;
+	}
+
+	/**
+	 * @param int $limit
+	 * @return self
+	 */
+	public function setLimit($limit) {
+		$this->limit = $limit;
+
+		return $this;
+	}
+
+	/**
+	 * @return int
+	 */
+	public function getLimit() {
+		return $this->limit;
+	}
+
+	/**
 	 * @return int
 	 */
     public function getOffset() {
+    	if ($this->limit === NULL) {
+    		return NULL;
+		}
         $this->getSteps();
 
         return $this->paginator->getOffset();

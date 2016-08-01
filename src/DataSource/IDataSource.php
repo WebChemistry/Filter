@@ -2,20 +2,19 @@
 
 namespace WebChemistry\Filter\DataSource;
 
-use WebChemistry\Filter\Settings;
-
 interface IDataSource {
 
 	/**
 	 * @param mixed $source
-	 * @param Settings $settings
 	 */
-	public function __construct($source, Settings $settings);
+	public function __construct($source);
 
 	/**
-	 * @return mixed
+	 * @param int $limit
+	 * @param int $offset
+	 * @return array
 	 */
-	public function getData();
+	public function getData($limit = NULL, $offset = NULL);
 
 	/**
 	 * @return int

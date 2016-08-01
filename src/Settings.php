@@ -2,75 +2,84 @@
 
 namespace WebChemistry\Filter;
 
-use Kdyby\Doctrine\QueryBuilder;
-use Nette\Database\Table\Selection;
-use Nette\Forms\Form;
-use Nette\Object;
-use Nette\Utils\Callback;
-use WebChemistry\Filter\DataSource\Doctrine;
-use WebChemistry\Filter\DataSource\IDataSource;
-use WebChemistry\Filter\DataSource\Nette;
+use Nette\Utils\ObjectMixin;
+use WebChemistry\Filter\DataSource;
 
 /**
- * @property int $limit
- * @property array $snippet
- * @property int $page
- * @property array $filteringDefaults
- * @property string $paginatorFile
- * @property bool $cacheFiltering
- * @property array $cacheArgs
- * @property bool $ajaxForm
+ * @property-read Paginator $paginator
+ * @property-read Links $links
+ * @property-read FormList $forms
+ * @property-read Additional $additional
  */
-class Settings extends Object {
+class Settings {
+
+	/** @var string */
+	public static $defaultPaginationTemplate = __DIR__ . '/templates/paginator.latte';
 
 	/** @var array */
 	private $snippet = [];
 
 	/** @var int */
-	private $limit;
-
-	/** @var int */
-	private $page;
-
-	/** @var int */
 	private $itemCount;
 
-	/** @var callable */
+	/** @var DataSource\DataSourceFacade */
 	private $dataSource;
 
-	/** @var int */
-	private $offset;
-
 	/** @var array */
-	private $filteringDefaults = [];
+	private $defaultFilterData = [];
 
-	/** @var string */
-	public static $defaultPaginatorFile;
-
-	/** @var string */
-	private $paginatorFile;
-
-	/** @var bool */
-	private $cacheFiltering = FALSE;
-
-	/** @var ComponentForm */
+	/** @var FormList */
 	private $forms;
 
-	/** @var array */
-	private $cacheArgs = [];
-
 	/** @var bool */
-	private $ajaxForm = FALSE;
+	private $dynamicLimit = FALSE;
+
+	/** @var Links */
+	private $links;
+
+	/** @var Paginator */
+	private $paginator;
+
+	/** @var Additional */
+	private $additional;
 
 	public function __construct() {
-		self::$defaultPaginatorFile = self::$defaultPaginatorFile ? : __DIR__ . '/Paginator/templates/paginator.latte';
-		$this->forms = new ComponentForm($this);
+		$this->forms = new FormList();
+		$this->links = new Links();
+		$this->paginator = new Paginator($this);
+		$this->paginator->setFile(self::$defaultPaginationTemplate);
+		$this->dataSource = new DataSource\DataSourceFacade();
+		$this->additional = new Additional();
+	}
+
+	/**
+	 * @param bool $dynamicLimit
+	 * @return self
+	 */
+	public function setDynamicLimit($dynamicLimit = TRUE) {
+		$this->dynamicLimit = $dynamicLimit;
+
+		return $this;
+	}
+
+	/**
+	 * @return bool
+	 */
+	public function isDynamicLimit() {
+		return $this->dynamicLimit;
+	}
+
+	/**
+	 * @return bool
+	 */
+	public function isAjax() {
+		return (bool) $this->snippet;
 	}
 
 	/**
 	 * @return array
 	 */
-	public function getSnippet() {
+	public function getSnippets() {
 		return (array) $this->snippet;
 	}
 
@@ -87,249 +96,76 @@ class Settings extends Object {
 	/**
 	 * @return int
 	 */
-	public function getLimit() {
-		return $this->limit;
-	}
-
-	/**
-	 * @param int|null $limit
-	 * @return \WebChemistry\Filter\Settings
-	 * @throws \WebChemistry\Filter\Exception
-	 */
-	public function setLimit($limit) {
-		if (!is_numeric($limit) && $limit !== NULL) {
-			throw new Exception('Limit must be an integer or null.');
-		}
-
-		$this->limit = $limit;
-
-		return $this;
-	}
-
-	/**
-	 * @return int
-	 */
-	public function getPage() {
-		return $this->page;
-	}
-
-	/**
-	 * @param int $page
-	 * @return \WebChemistry\Filter\Settings
-	 * @throws \WebChemistry\Filter\Exception
-	 */
-	public function setPage($page) {
-		if (!is_int($page)) {
-			throw new Exception('Page must be an integer.');
-		}
-
-		$this->page = $page;
-
-		return $this;
-	}
-
-	/**
-	 * @return int
-	 */
 	public function getItemCount() {
+		$this->dataSource->check();
 		if (!$this->itemCount) {
-			$this->itemCount = $this->dataSource->getCount();
+			$this->itemCount = $this->dataSource->getDataSource()->getCount();
 		}
 
 		return $this->itemCount;
 	}
 
 	/**
-	 * @return callable
+	 * @return DataSource\DataSourceFacade
 	 */
 	public function getDataSource() {
 		return $this->dataSource;
 	}
 
 	/**
-	 * @internal
+	 * @param array $defaultFilterData
+	 * @return self
 	 */
-	public function callDataSource(array $filtering) {
-		if ($this->dataSource instanceof IDataSource) {
-			return NULL;
-		}
-
-		$dataSource = call_user_func($this->dataSource, $filtering + $this->filteringDefaults);
-		if ($dataSource instanceof Selection) {
-			$this->dataSource = new Nette($dataSource, $this);
-		} else if ($dataSource instanceof QueryBuilder) {
-			$this->dataSource = new Doctrine($dataSource, $this);
-		} else {
-			throw new Exception('Bad datasource.');
-		}
-
-		return $this->dataSource;
-	}
-
-	/**
-	 * @param callable $dataSource
-	 * @return \WebChemistry\Filter\Settings
-	 * @throws \WebChemistry\Filter\Exception
-	 */
-	public function setDataSource($dataSource) {
-		if ($this->dataSource instanceof IDataSource) {
-			throw new Exception('DataSource already set.');
-		}
-
-		$this->dataSource = Callback::check($dataSource);
-
-		return $this;
-	}
-
-	/**
-	 * @return mixed
-	 * @throws \WebChemistry\Filter\Exception
-	 */
-	public function getData() {
-		if (!$this->dataSource instanceof IDataSource) {
-			throw new Exception('DataSource was not called.');
-		}
-
-		return $this->dataSource->getData();
-	}
-
-	/**
-	 * @return \WebChemistry\Filter\Filter
-	 */
-	public function createFilter() {
-		return new Filter($this);
-	}
-
-	/**
-	 * @return int
-	 */
-	public function getOffset() {
-		return $this->offset;
-	}
-
-	/**
-	 * @param int $offset
-	 * @return \WebChemistry\Filter\Settings
-	 * @throws \WebChemistry\Filter\Exception
-	 */
-	public function setOffset($offset) {
-		if (!is_int($offset)) {
-			throw new Exception('Offset must be an integer.');
-		}
-
-		$this->offset = $offset;
-
-		return $this;
-	}
-
-	/**
-	 * @param array $filteringDefaults
-	 * @return Settings
-	 */
-	public function setFilteringDefaults(array $filteringDefaults) {
-		$this->filteringDefaults = $filteringDefaults;
-
-		return $this;
-	}
-
-	/**
-	 * @return string
-	 */
-	public function getPaginatorFile() {
-		return $this->paginatorFile ? $this->paginatorFile : self::$defaultPaginatorFile;
-	}
-
-	/**
-	 * @param string $paginatorFile
-	 * @return \WebChemistry\Filter\Settings
-	 * @throws \WebChemistry\Filter\Exception
-	 */
-	public function setPaginatorFile($paginatorFile) {
-		if (!file_exists($paginatorFile) || is_dir($paginatorFile)) {
-			throw new Exception("File '$paginatorFile' is not exists.");
-		}
-
-		$this->paginatorFile = $paginatorFile;
-
-		return $this;
-	}
-
-	/**
-	 * @return boolean
-	 */
-	public function isCacheFiltering() {
-		return $this->cacheFiltering;
-	}
-
-	/**
-	 * @param boolean $cacheFiltering
-	 * @return Settings
-	 */
-	public function setCacheFiltering($cacheFiltering) {
-		$this->cacheFiltering = (bool) $cacheFiltering;
-
-		return $this;
-	}
-
-	/**
-	 * @return ComponentForm
-	 */
-	public function getForms() {
-		return $this->forms;
-	}
-
-	/**
-	 * @param callable|Form $form
-	 * @param string $name
-	 * @return Settings
-	 * @throws Exception
-	 */
-	public function addForm($form, $name) {
-		if (is_callable($form)) {
-			$form = $form();
-		}
-
-		if (!$form instanceof Form) {
-			throw new Exception(printf('Form must be instance of Nette\Forms\Form, given %s', Exception::getType($form)));
-		}
-
-		$this->forms->addComponent($form, $name);
+	public function setDefaultFilterData(array $defaultFilterData) {
+		$this->defaultFilterData = $defaultFilterData;
 
 		return $this;
 	}
 
 	/**
 	 * @return array
+	 * @internal
 	 */
-	public function getCacheArgs() {
-		return $this->cacheArgs;
+	public function getDefaultFilterData() {
+		return $this->defaultFilterData;
 	}
 
 	/**
-	 * @param array $cacheArgs
-	 * @return Settings
+	 * @return FormList
 	 */
-	public function setCacheArgs(array $cacheArgs) {
-		$this->cacheArgs = $cacheArgs;
-
-		return $this;
+	public function getForms() {
+		return $this->forms;
 	}
 
 	/**
-	 * @return boolean
+	 * @return Links
 	 */
-	public function isAjaxForm() {
-		return $this->ajaxForm;
+	public function getLinks() {
+		return $this->links;
 	}
 
 	/**
-	 * @param boolean $ajaxForm
-	 * @return Settings
+	 * @return Paginator
 	 */
-	public function setAjaxForm($ajaxForm) {
-		$this->ajaxForm = (bool) $ajaxForm;
+	public function getPaginator() {
+		return $this->paginator;
+	}
 
-		return $this;
+	/**
+	 * @return Additional
+	 */
+	public function getAdditional() {
+		return $this->additional;
+	}
+
+	/************************* Magic **************************/
+
+	/**
+	 * @param string $name
+	 * @return mixed
+	 */
+	public function __get($name) {
+		return ObjectMixin::get($this, $name);
 	}
 
 }

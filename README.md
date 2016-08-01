@@ -3,11 +3,18 @@
 **Instalace**
 `composer require webchemistry/filter`
 
-## Dokumentace
+**register DI**
+´´´yaml
+extensions:
+    filter: WebChemistry\Filter\DI\FilterExtension
+´´´
 
-- [Datasource](https://github.com/WebChemistry/Filter/tree/master/docs/cs/datasource.md)
-- [Paginator](https://github.com/WebChemistry/Filter/tree/master/docs/cs/paginator.md)
-- [Filters](https://github.com/WebChemistry/Filter/tree/master/docs/cs/filters.md)
-- [Cache](https://github.com/WebChemistry/Filter/tree/master/docs/cs/cache.md)
-- [Ajax](https://github.com/WebChemistry/Filter/tree/master/docs/cs/ajax.md)
+## Demo
 
+## Documentation
+
+[Basic usage](https://github.com/WebChemistry/filter/blob/master/docs/basic.md)
+[Create form filters](https://github.com/WebChemistry/filter/blob/master/docs/filters.md)
+[Dynamic links](https://github.com/WebChemistry/filter/blob/master/docs/links.md)
+[Active row callbacks and getters](https://github.com/WebChemistry/filter/blob/master/docs/additional.md)
+[Ajax](https://github.com/WebChemistry/filter/blob/master/docs/ajax.md)
