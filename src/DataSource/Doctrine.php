@@ -5,6 +5,7 @@ namespace WebChemistry\Filter\DataSource;
 use Doctrine as Doc, Nette;
 
 use Doctrine\ORM\QueryBuilder;
+use WebChemistry\Filter\FilterException;
 
 /**
  * @property-read QueryBuilder $queryBuilder
@@ -21,6 +22,12 @@ class DoctrineDataSource extends Nette\ComponentModel\Component implements IData
 
 	/** @var integer */
 	private $count = NULL;
+
+	/** @var string */
+	private $resultType = Doc\ORM\AbstractQuery::HYDRATE_ARRAY;
+
+	/** @var string class name */
+	private $DTO;
 
 	/**
 	 * @param mixed $source
@@ -57,7 +64,16 @@ class DoctrineDataSource extends Nette\ComponentModel\Component implements IData
 			$this->builder->setFirstResult($offset);
 		}
 
-		return $this->builder->getQuery()->getResult();
+		$class = $this->DTO;
+		if ($class) {
+			foreach ($this->builder->getQuery()->getResult($this->resultType) as $item) {
+				yield new $class($item);
+			}
+		} else {
+			foreach ($this->builder->getQuery()->getResult($this->resultType) as $item) {
+				yield $item;
+			}
+		}
 	}
 
 	public function getCount() {
@@ -69,6 +85,20 @@ class DoctrineDataSource extends Nette\ComponentModel\Component implements IData
 		}
 
 		return $this->count;
+	}
+
+	/**
+	 * @param string $DTO
+	 * @throws FilterException
+	 * @return DoctrineDataSource
+	 */
+	public function setDTO($DTO) {
+		if (!class_exists($DTO)) {
+			throw new FilterException("DTO class '$DTO' not exists.");
+		}
+		$this->DTO = $DTO;
+
+		return $this;
 	}
 
 }
