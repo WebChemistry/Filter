@@ -14,6 +14,9 @@ class DataSourceFacade {
 	/** @var IDataSource */
 	private $dataSource;
 
+	/** @var callable[] */
+	public $onCreate = [];
+
 	/**
 	 * @param callable $callback
 	 */
@@ -45,6 +48,10 @@ class DataSourceFacade {
 				$this->dataSource = new DoctrineDataSource($dataSource);
 			} else {
 				throw new FilterException('Bad datasource.');
+			}
+
+			foreach ($this->onCreate as $callback) {
+				$callback($dataSource);
 			}
 		}
 
