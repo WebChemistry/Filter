@@ -20,8 +20,8 @@
 		}
 	],
 	"require": {
-		"nette/application": "^2.3",
-		"nette/forms": "^2.3"
+		"nette/application": "^2.4",
+		"nette/forms": "^2.4"
 	},
 	"require-dev": {
 		"kdyby/doctrine": ">= 2.3.0",
