@@ -1,30 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace WebChemistry\Filter\DataSource;
 
 interface IDataSource {
 
-	/**
-	 * @param mixed $source
-	 */
-	public function __construct($source);
+	public function getItemCount(): int;
 
-	/**
-	 * @param int $limit
-	 * @param int $offset
-	 * @return array
-	 */
-	public function getData($limit = NULL, $offset = NULL);
-
-	/**
-	 * @return int
-	 */
-	public function getCount();
-
-	/**
-	 * @param string $select
-	 * @return mixed
-	 */
-	public function setSelect($select);
+	public function getData(?int $limit, ?int $offset): iterable;
 
 }
