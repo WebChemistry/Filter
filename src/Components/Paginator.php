@@ -31,6 +31,9 @@ class Paginator extends Control {
 	/** @var int */
 	private $itemCount;
 
+	/** @var IDataSource */
+	private $dataSource;
+
 	public function __construct(?int $limit, IDataSource $dataSource, FilterOptions $options) {
 		parent::__construct();
 
@@ -38,9 +41,17 @@ class Paginator extends Control {
 		$this->limit = $limit;
 		$this->file = $options->paginatorFile ?: __DIR__ . '/templates/paginator.latte';
 		$this->snippets = $options->snippets;
-		if ($this->limit !== null) {
-			$this->itemCount = $dataSource->getItemCount();
+		$this->dataSource = $dataSource;
+	}
+
+	public function getItemCount(): ?int {
+		if (!$this->itemCount) {
+			if ($this->limit !== null) {
+				$this->itemCount = $this->dataSource->getItemCount();
+			}
 		}
+
+		return $this->itemCount;
 	}
 
 	public function render(): void {
@@ -62,6 +73,10 @@ class Paginator extends Control {
 		$template->render();
 	}
 
+	public function isFirstPage(): bool {
+		return $this->page === 1;
+	}
+
 	/**
 	 * @return int
 	 */
@@ -74,7 +89,7 @@ class Paginator extends Control {
 	public function getItemsOnPage(): int {
 		$this->getSteps();
 
-		return $this->limit === null ? $this->itemCount : $this->paginator->getItemCount();
+		return $this->limit === null ? $this->getItemCount() : $this->paginator->getItemCount();
 	}
 
 	/**
@@ -153,7 +168,7 @@ class Paginator extends Control {
 			} else {
 				$this->paginator->setPage((int) $this->page);
 				$this->paginator->setItemsPerPage($this->limit);
-				$this->paginator->setItemCount($this->itemCount);
+				$this->paginator->setItemCount($this->getItemCount());
 				$this->paginator->setPage($this->page);
 				$paginator = $this->paginator;
 				$arr = range(max($paginator->getFirstPage(), $paginator->getPage() - 2), min($paginator->getLastPage(), $paginator->getPage() + 2));

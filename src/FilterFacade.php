@@ -43,6 +43,10 @@ class FilterFacade {
 		return $to < $this->getItemCount() ? $to : $this->getItemCount();
 	}
 
+	public function isFirstPage(): bool {
+		return $this->getPaginator()->isFirstPage();
+	}
+
 	public function getItemCount(): int {
 		return $this->dataSource->getItemCount();
 	}
