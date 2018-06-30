@@ -60,6 +60,12 @@ final class FilterParameters {
 	}
 
 	public function addFilter(string $name, $value): void {
+		if ($value === null) {
+			unset($this->filters[$name]);
+
+			return;
+		}
+
 		if (isset($this->options->types[$name]) && $this->convertType($value, $name)) {
 			$this->filters[$name] = $value;
 		}
