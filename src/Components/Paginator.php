@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WebChemistry\Filter\Components;
 
+use Nette\Application\UI\Component;
 use Nette\Application\UI\Control;
 use WebChemistry\Filter\DataSource\IDataSource;
 use WebChemistry\Filter\FilterOptions;
@@ -34,14 +35,24 @@ class Paginator extends Control {
 	/** @var IDataSource */
 	private $dataSource;
 
-	public function __construct(?int $limit, IDataSource $dataSource, FilterOptions $options) {
-		parent::__construct();
+	/** @var bool */
+	private $append = false;
 
+	/** @var bool */
+	private $ajax = false;
+
+	/** @var callable[] */
+	public $onAjax = [];
+
+	public function __construct(?int $limit, IDataSource $dataSource, FilterOptions $options) {
 		$this->paginator = new \Nette\Utils\Paginator();
 		$this->limit = $limit;
+		$this->onAjax = $options->onAjax;
 		$this->file = $options->paginatorFile ?: __DIR__ . '/templates/paginator.latte';
 		$this->snippets = $options->snippets;
+		$this->ajax = $options->ajax;
 		$this->dataSource = $dataSource;
+		$this->append = $options->append;
 	}
 
 	public function getItemCount(): ?int {
@@ -63,12 +74,17 @@ class Paginator extends Control {
 
 		$template->paginator = $this->paginator;
 		$template->steps = $this->getSteps();
-		$template->ajax = (bool) $this->snippets;
+		$template->ajax = $this->ajax;
 		$template->pageCount = $this->paginator->getPageCount();
 		$template->page = $this->paginator->getPage();
 		$template->use = $this->paginator->getPageCount() > 1;
 		$template->prevLink = $this->prevLink();
 		$template->nextLink = $this->nextLink();
+		$template->appendLink = null;
+
+		if ($this->append && $this->limit && $this->page < $this->paginator->getPageCount()) {
+			$template->appendLink = $this->link('paginate!', ['page' => $this->page + 1]);
+		}
 
 		$template->render();
 	}
@@ -122,7 +138,7 @@ class Paginator extends Control {
 	 * @internal
 	 */
 	public function stepLink($step) {
-		if ($this->snippets) {
+		if ($this->ajax) {
 			return $this->link('paginate!', ['page' => $step]);
 		}
 
@@ -135,8 +151,11 @@ class Paginator extends Control {
 	public function handlePaginate() {
 		if ($this->getPresenter()->isAjax()) {
 			foreach ($this->snippets as $snippet) {
-				$this->getPresenter()->redrawControl($snippet);
+				$this->getParent()->getControl()->redrawControl($snippet);
 			}
+			/*foreach ($this->onAjax as $callback) {
+				$callback($this);
+			}*/
 		} else {
 			$this->redirect('this');
 		}

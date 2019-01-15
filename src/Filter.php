@@ -5,15 +5,18 @@ declare(strict_types=1);
 namespace WebChemistry\Filter;
 
 use Doctrine\ORM\QueryBuilder;
-use Kdyby\Translation\ITranslator;
+use Nette\Localization\ITranslator;
 use Nette\Application\IPresenter;
+use Nette\Application\UI\Component;
 use Nette\Application\UI\ComponentReflection;
 use Nette\Application\UI\Control;
 use Nette\Application\UI\Form;
+use Nette\Application\UI\Presenter;
 use Nette\ComponentModel\IComponent;
 use WebChemistry\Filter\Components\ComponentWrapper;
 use WebChemistry\Filter\Components\FormBuilder;
 use WebChemistry\Filter\Components\Paginator;
+use WebChemistry\Filter\DataSource\DataSourceRegistry;
 use WebChemistry\Filter\DataSource\DoctrineDataSource;
 use WebChemistry\Filter\DataSource\IDataSource;
 
@@ -46,18 +49,36 @@ class Filter extends Control {
 	/** @var FormBuilder[] */
 	private $forms = [];
 
+	/** @var Component */
+	private $control;
+
 	/** @var callable[] */
 	public $onFetch = [];
 
-	public function __construct(FilterOptions $filterOptions, ?ITranslator $translator = null) {
-		parent::__construct();
+	/** @var callable|null */
+	public $onDataReturn;
 
+	/** @var DataSourceRegistry */
+	private $dataSourceRegistry;
+
+	public function __construct(DataSourceRegistry $registry, FilterOptions $filterOptions, ?ITranslator $translator = null) {
 		$this->translator = $translator;
 		$this->filterOptions = $filterOptions;
+		$this->dataSourceRegistry = $registry;
 		$this->filterParams = new FilterParameters($filterOptions);
 		$this->filterValues = new FilterValues($this->filterOptions, $this->filterParams);
 
 		$this->init();
+
+		$this->onAnchor[] = [$this, 'whenAttached'];
+	}
+
+	public function getControl(): Component {
+		if (!$this->control) {
+			$this->control = $this->lookup(Component::class);
+		}
+
+		return $this->control;
 	}
 
 	private function init(): void {
@@ -67,10 +88,11 @@ class Filter extends Control {
 		}
 	}
 
-	private function whenAttached(): void {
+	public function whenAttached(): void {
 		// forms
 		$this->addComponent($wrapper = new ComponentWrapper(), 'forms');
 		$defaults = $this->filterValues->getFilterValues();
+
 		foreach ($this->forms as $name => $builder) {
 			$form = $builder->getForm();
 
@@ -111,9 +133,10 @@ class Filter extends Control {
 	private function createDataSource(): void {
 		$callback = $this->filterOptions->source;
 		$source = $callback($this->filterValues);
-		if ($source instanceof QueryBuilder) {
-			$this->dataSource = new DoctrineDataSource($source, $this->filterOptions->sourceOptions);
-		} else {
+
+		$this->dataSource = $this->dataSourceRegistry->getDataSource($source, $this->filterOptions->sourceOptions);
+
+		if (!$this->dataSource) {
 			throw new FilterException('Unsupported data source.');
 		}
 	}
@@ -133,20 +156,16 @@ class Filter extends Control {
 		$this->addComponent($this->paginator, 'paginator');
 	}
 
-	protected function attached(IComponent $obj): void {
-		parent::attached($obj);
-
-		if ($obj instanceof IPresenter) {
-			$this->whenAttached();
-		}
-	}
-
 	public function getData(): iterable {
 		if ($this->data === false) {
 			$this->data = $this->dataSource->getData($this->filterValues->getLimitPerPage(), $this->paginator->getOffset());
 			foreach ($this->onFetch as $fetch) {
 				$fetch($this->data);
 			}
+		}
+
+		if ($this->onDataReturn) {
+			return ($this->onDataReturn)($this->data);
 		}
 
 		return $this->data;
@@ -164,12 +183,6 @@ class Filter extends Control {
 		$this->filterParams->resetState();
 
 		return $this->link('this');
-	}
-
-	public function handleLink(string $name, $val): void {
-		$this->filterParams->addLink($name, $val);
-
-		$this->redirect('this');
 	}
 
 	// components

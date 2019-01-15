@@ -7,6 +7,8 @@
 	$nextLink string|null
 	$prevLink string|null
 *}
+<div n:if="$appendLink" data-filter-append="{$appendLink}"></div>
+
 <nav n:if="$use">
 	<ul class="pagination">
 		<li n:class="!$prevLink ? disabled">

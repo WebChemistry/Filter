@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace WebChemistry\Filter;
 
+use Nette\Application\UI\Component;
+
 /**
  * Internal use FilterValues
  */
@@ -31,7 +33,10 @@ final class FilterOptions {
 	public $paginatorFile;
 
 	/** @var bool */
-	public $ajax;
+	public $ajax = false;
+
+	/** @var bool */
+	public $append = false;
 
 	/** @var string[] name => type */
 	public $types = [];
@@ -45,8 +50,17 @@ final class FilterOptions {
 	/** @var array name => values */
 	public $orderValues = [];
 
+	/** @var callable[] */
+	public $onAjax = [];
+
 	/** @var array */
 	public $limits = [10 => 10, 20 => 20, 50 => 50, 100 => 100];
+
+	public function callAjax(Component $component): void {
+		foreach ($this->onAjax as $callback) {
+			$callback($component);
+		}
+	}
 
 	public function addLink(string $name): void {
 		$this->links[$name] = true;

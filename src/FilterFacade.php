@@ -88,8 +88,16 @@ class FilterFacade {
 		return $this->filter->getResetLink();
 	}
 
+	public function getLinkValue(string $name) {
+		return $this->values->getFilter($name);
+	}
+
 	public function getLink(string $name, $val): string {
-		return $this->filter->link('link!', [$name, $val]);
+		return $this->filter->link('this', [
+			'filters' => [
+				$name => $val,
+			],
+		]);
 	}
 
 	public function getOrder(): Form {

@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace WebChemistry\Filter;
 
-use Kdyby\Translation\ITranslator;
+use Nette\Localization\ITranslator;
+use WebChemistry\Filter\DataSource\DataSourceRegistry;
 
 class FilterBuilder {
 
@@ -26,9 +27,19 @@ class FilterBuilder {
 	/** @var callable[] */
 	public $onFetch = [];
 
-	public function __construct(?ITranslator $translator = null) {
+	/** @var callable[] */
+	public $onAjax = [];
+
+	/** @var callable|null */
+	public $onDataReturn;
+
+	/** @var DataSourceRegistry */
+	protected $registry;
+
+	public function __construct(DataSourceRegistry $registry, ?ITranslator $translator = null) {
 		$this->options = new FilterOptions();
 		$this->translator = $translator;
+		$this->registry = $registry;
 
 		$this->options->limitPerPage = self::$globalDefaults['limitPerPage'];
 		$this->options->ajax = self::$globalDefaults['ajax'];
@@ -86,6 +97,12 @@ class FilterBuilder {
 		return $this;
 	}
 
+	public function setAppend(bool $append = true): self {
+		$this->options->append = $append;
+
+		return $this;
+	}
+
 	public function setSnippets(array $snippets): self {
 		$this->options->snippets = $snippets;
 
@@ -93,8 +110,11 @@ class FilterBuilder {
 	}
 
 	public function createFilter(): Filter {
-		$filter = new Filter($this->options, $this->translator);
+		$this->options->onAjax = $this->onAjax;
+
+		$filter = new Filter($this->registry, $this->options, $this->translator);
 		$filter->onFetch = $this->onFetch;
+		$filter->onDataReturn = $this->onDataReturn;
 		foreach ($this->onCreate as $callback) {
 			$callback($filter);
 		}
