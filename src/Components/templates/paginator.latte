@@ -1,11 +1,11 @@
 {*
-	$page Actuall page
-	$pageCount Total number of pages
-	$use Use paginator?
-	$ajax Ajax?
-	$steps array of steps
-	$nextLink string|null
-	$prevLink string|null
+	int      $page actuall page
+	int      $pageCount total number of pages
+	bool     $use use paginator
+	bool     $ajax use ajax
+	int[]    $steps array of steps
+	?string  $nextLink next link
+	?string  $prevLink previous link
 *}
 <div n:if="$appendLink" data-filter-append="{$appendLink}"></div>
 

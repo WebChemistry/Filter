@@ -15,6 +15,9 @@ final class FilterExtension extends CompilerExtension {
 	/** @var array */
 	public $defaults = [
 		'filterBuilderFactory' => FilterBuilderFactory::class,
+		'paginator' => [
+			'template' => null,
+		],
 	];
 
 	public function loadConfiguration() {
@@ -24,9 +27,13 @@ final class FilterExtension extends CompilerExtension {
 		$builder->addDefinition($this->prefix('dataSourceRegistry'))
 			->setType(DataSourceRegistry::class);
 
-		$builder->addDefinition($this->prefix('filterBuilderFactory'))
-			->setType(IFilterBuilderFactory::class)
-			->setFactory($config['filterBuilderFactory']);
+		$filter = $builder->addFactoryDefinition($this->prefix('filterBuilderFactory'))
+			->setImplement(IFilterBuilderFactory::class)
+			->getResultDefinition();
+
+		if ($config['paginator']['template']) {
+			$filter->addSetup('setPaginatorFile', [$config['paginator']['template']]);
+		}
 	}
 
 }
