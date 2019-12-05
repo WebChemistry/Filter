@@ -9,12 +9,6 @@ use WebChemistry\Filter\DataSource\DataSourceRegistry;
 
 class FilterBuilder {
 
-	public static $globalDefaults = [
-		'limitPerPage' => 10,
-		'ajax' => false,
-		'paginatorFile' => NULL,
-	];
-
 	/** @var FilterOptions */
 	private $options;
 
@@ -40,10 +34,6 @@ class FilterBuilder {
 		$this->options = new FilterOptions();
 		$this->translator = $translator;
 		$this->registry = $registry;
-
-		$this->options->limitPerPage = self::$globalDefaults['limitPerPage'];
-		$this->options->ajax = self::$globalDefaults['ajax'];
-		$this->options->paginatorFile = self::$globalDefaults['paginatorFile'];
 	}
 
 	/**

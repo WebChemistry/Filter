@@ -55,7 +55,7 @@ final class FormBuilder {
 
 	public function addSelectCustom(string $name, ?string $label, array $items, string $type, $default = null): SelectBox {
 		$input = $this->form->addSelect($name, $label, $items);
-		$input->checkAllowedValues = false;
+		$input->checkDefaultValue(false);
 
 		$this->options->addDefaultValue($name, $default);
 		$this->options->addType($name, $type);

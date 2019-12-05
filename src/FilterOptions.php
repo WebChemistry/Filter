@@ -12,7 +12,7 @@ use Nette\Application\UI\Component;
 final class FilterOptions {
 
 	/** @var int|null */
-	public $limitPerPage;
+	public $limitPerPage = 10;
 	
 	/** @var bool[] name => true */
 	public $links = [];
