@@ -3,6 +3,7 @@
 namespace WebChemistry\Filter\DataSource;
 
 use Doctrine\ORM\QueryBuilder;
+use Nette\Database\Table\Selection;
 use Nette\SmartObject;
 
 class DataSourceRegistry {
@@ -15,6 +16,7 @@ class DataSourceRegistry {
 	public function __construct() {
 		$this->registry = [
 			QueryBuilder::class => new DoctrineDataSourceFactory(),
+			Selection::class => new NetteDataSourceFactory(),
 		];
 	}
 
