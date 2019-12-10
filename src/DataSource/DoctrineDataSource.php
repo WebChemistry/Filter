@@ -22,6 +22,9 @@ class DoctrineDataSource implements IDataSource {
 	/** @var array */
 	private $options;
 
+	/** @var bool|null */
+	private $compositeId = null;
+
 	public function __construct(QueryBuilder $queryBuilder, array $options = []) {
 		if (isset($options['hydrationMode'])) {
 			$this->resultType = $options['hydrationMode'];
@@ -31,14 +34,26 @@ class DoctrineDataSource implements IDataSource {
 		$this->options = $options;
 	}
 
+	protected function isCompositeId(): bool {
+		if ($this->compositeId === null) {
+			$this->compositeId = false;
+			foreach ($this->queryBuilder->getRootEntities() as $entity) {
+				if ($this->queryBuilder->getEntityManager()->getClassMetadata($entity)->isIdentifierComposite) {
+					$this->compositeId = true;
+
+					break;
+				}
+			}
+		}
+
+		return $this->compositeId;
+	}
+
 	public function getItemCount(): int {
 		if ($this->count === NULL) {
-			$paginator = new Paginator($this->queryBuilder);
+			$paginator = new Paginator($this->queryBuilder, !$this->isCompositeId());
 
 			$this->count = $paginator->count();
-			/*$alias = $this->queryBuilder->getRootAliases();
-			$builder = clone $this->queryBuilder;
-			$this->count = (int) $builder->select('count(' . current($alias) . '.id)')->getQuery()->getSingleScalarResult();*/
 		}
 
 		return $this->count;
@@ -49,9 +64,9 @@ class DoctrineDataSource implements IDataSource {
 			$this->queryBuilder->setFirstResult($offset);
 			$this->queryBuilder->setMaxResults($limit);
 
-			$paginator = new Paginator($this->queryBuilder->getQuery()->setHydrationMode($this->resultType));
+			$paginator = new Paginator($this->queryBuilder->getQuery()->setHydrationMode($this->resultType), !$this->isCompositeId());
 
-			return $paginator->getIterator();
+			return iterator_to_array($paginator->getIterator());
 		}
 
 		return $this->queryBuilder->getQuery()->getResult($this->resultType);
