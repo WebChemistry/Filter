@@ -25,6 +25,9 @@ class DoctrineDataSource implements IDataSource {
 	/** @var bool|null */
 	private $compositeId = null;
 
+	/** @var Paginator|null */
+	private $paginator;
+
 	public function __construct(QueryBuilder $queryBuilder, array $options = []) {
 		if (isset($options['hydrationMode'])) {
 			$this->resultType = $options['hydrationMode'];
@@ -32,6 +35,16 @@ class DoctrineDataSource implements IDataSource {
 
 		$this->queryBuilder = $queryBuilder;
 		$this->options = $options;
+	}
+
+	protected function getPaginator(): Paginator {
+		if (!$this->paginator) {
+			$query = $this->queryBuilder->getQuery()->setHydrationMode($this->resultType);
+
+			$this->paginator = new Paginator($query, !$this->isCompositeId());
+		}
+
+		return $this->paginator;
 	}
 
 	protected function isCompositeId(): bool {
@@ -60,16 +73,11 @@ class DoctrineDataSource implements IDataSource {
 	}
 
 	public function getData(?int $limit, ?int $offset): iterable {
-		if ($limit !== NULL) {
-			$this->queryBuilder->setFirstResult($offset);
-			$this->queryBuilder->setMaxResults($limit);
+		$query = $this->getPaginator()->getQuery();
+		$query->setMaxResults($limit);
+		$query->setFirstResult($offset);
 
-			$paginator = new Paginator($this->queryBuilder->getQuery()->setHydrationMode($this->resultType), !$this->isCompositeId());
-
-			return iterator_to_array($paginator->getIterator());
-		}
-
-		return $this->queryBuilder->getQuery()->getResult($this->resultType);
+		return iterator_to_array($this->getPaginator()->getIterator());
 	}
 
 }
