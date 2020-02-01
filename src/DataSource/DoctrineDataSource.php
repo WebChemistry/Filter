@@ -16,11 +16,11 @@ class DoctrineDataSource implements IDataSource {
 	/** @var int */
 	private $count;
 
-	/** @var int */
-	private $resultType = AbstractQuery::HYDRATE_OBJECT;
-
 	/** @var array */
-	private $options;
+	private $options = [
+		'hydrationMode' => AbstractQuery::HYDRATE_OBJECT,
+		'outputWalkers' => true,
+	];
 
 	/** @var bool|null */
 	private $compositeId = null;
@@ -29,19 +29,17 @@ class DoctrineDataSource implements IDataSource {
 	private $paginator;
 
 	public function __construct(QueryBuilder $queryBuilder, array $options = []) {
-		if (isset($options['hydrationMode'])) {
-			$this->resultType = $options['hydrationMode'];
-		}
-
 		$this->queryBuilder = $queryBuilder;
-		$this->options = $options;
+
+		$this->options = array_replace($this->options, $options);
 	}
 
 	protected function getPaginator(): Paginator {
 		if (!$this->paginator) {
-			$query = $this->queryBuilder->getQuery()->setHydrationMode($this->resultType);
+			$query = $this->queryBuilder->getQuery()->setHydrationMode($this->options['hydrationMode']);
 
 			$this->paginator = new Paginator($query, !$this->isCompositeId());
+			$this->paginator->setUseOutputWalkers($this->options['outputWalkers']);
 		}
 
 		return $this->paginator;
@@ -64,9 +62,7 @@ class DoctrineDataSource implements IDataSource {
 
 	public function getItemCount(): int {
 		if ($this->count === NULL) {
-			$paginator = new Paginator($this->queryBuilder, !$this->isCompositeId());
-
-			$this->count = $paginator->count();
+			$this->count = $this->getPaginator()->count();
 		}
 
 		return $this->count;
