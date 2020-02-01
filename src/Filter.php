@@ -55,7 +55,7 @@ class Filter extends Control {
 	/** @var callable[] */
 	public $onFetch = [];
 
-	/** @var callable|null */
+	/** @var callable|null @deprecated */
 	public $onDataReturn;
 
 	/** @var DataSourceRegistry */
@@ -160,10 +160,14 @@ class Filter extends Control {
 		if ($this->data === false) {
 			$this->data = $this->dataSource->getData($this->filterValues->getLimitPerPage(), $this->paginator->getOffset());
 			foreach ($this->onFetch as $fetch) {
-				$fetch($this->data);
+				$returns = $fetch($this->data);
+				if ($returns !== null) {
+					$this->data = $returns;
+				}
 			}
 		}
 
+		// deprecated
 		if ($this->onDataReturn) {
 			return ($this->onDataReturn)($this->data);
 		}
